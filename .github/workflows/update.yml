@@ -1,0 +1,48 @@
+name: Update data and deploy
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # GitHub có thể trễ vài phút
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Khi đã commit package-lock.json, đổi thành `npm ci` và bật `cache: npm` ở bước trên
+      - run: npm install --no-audit --no-fund
+
+      - name: Fetch top 100 coins
+        run: npm run fetch
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
