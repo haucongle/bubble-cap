@@ -16,10 +16,21 @@ const COLOR_RANGE: Record<Timeframe, number> = { "1h": 1.5, "24h": 6, "7d": 15 }
 
 export function bubbleColors(change: number, tf: Timeframe) {
   const t = Math.min(Math.abs(change) / COLOR_RANGE[tf], 1);
-  const hue = change >= 0 ? 160 : 355;
+  if (change >= 0) {
+    return {
+      inner: `hsl(128, ${45 + 35 * t}%, ${13 + 22 * t}%)`,
+      outer: `hsl(130, ${55 + 25 * t}%, ${20 + 24 * t}%)`,
+      stroke: `hsl(128, ${60 + 30 * t}%, ${38 + 20 * t}%)`,
+      glow: `hsla(125, 90%, 50%, ${0.25 + 0.6 * t})`,
+      glowBlur: 6 + 22 * t,
+    };
+  }
   return {
-    fill: `hsl(${hue}, ${18 + 42 * t}%, ${19 + 17 * t}%)`,
-    stroke: `hsl(${hue}, ${30 + 45 * t}%, ${38 + 22 * t}%)`,
+    inner: `hsl(355, ${22 + 20 * t}%, ${14 + 6 * t}%)`,
+    outer: `hsl(355, ${32 + 20 * t}%, ${24 + 8 * t}%)`,
+    stroke: `hsl(355, ${40 + 15 * t}%, ${48 + 8 * t}%)`,
+    glow: `hsla(355, 70%, 50%, ${0.12 + 0.2 * t})`,
+    glowBlur: 4 + 8 * t,
   };
 }
 
@@ -40,9 +51,9 @@ export function computeRadii(
       : Math.pow(Math.max(Math.abs(changeFor(c, tf)), 0.5), 0.6),
   );
   const sumSq = raw.reduce((s, v) => s + v * v, 0) || 1;
-  const k = Math.sqrt((0.42 * w * h) / (Math.PI * sumSq));
-  const minR = 13;
-  const maxR = Math.max(minR, Math.min(w, h) * 0.2);
+  const k = Math.sqrt((0.6 * w * h) / (Math.PI * sumSq));
+  const minR = 11;
+  const maxR = Math.max(minR, Math.min(w, h) * 0.26);
   const out = new Map<string, number>();
   coins.forEach((c, i) => out.set(c.id, Math.min(maxR, Math.max(minR, raw[i] * k))));
   return out;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BubbleChart from "./BubbleChart";
 import { STABLECOINS } from "./utils";
 import type { CoinsFile, SizeBy, Timeframe } from "./types";
@@ -35,6 +35,21 @@ export default function App() {
   const [timeframe, setTimeframe] = useState<Timeframe>("24h");
   const [sizeBy, setSizeBy] = useState<SizeBy>("movement");
   const [hideStable, setHideStable] = useState(true);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Ctrl/Cmd + K để focus ô tìm kiếm
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +89,24 @@ export default function App() {
     <div className="app">
       <header className="bar">
         <h1>Bubblecap</h1>
+        <div className="search">
+          <input
+            ref={searchRef}
+            type="search"
+            value={query}
+            placeholder="Search token…"
+            aria-label="Search token"
+            autoComplete="off"
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setQuery("");
+                e.currentTarget.blur();
+              }
+            }}
+          />
+          <kbd>Ctrl K</kbd>
+        </div>
         <div className="controls">
           <Segmented<Timeframe>
             label="Change over"
@@ -111,7 +144,7 @@ export default function App() {
       </header>
 
       {data ? (
-        <BubbleChart coins={coins} timeframe={timeframe} sizeBy={sizeBy} />
+        <BubbleChart coins={coins} timeframe={timeframe} sizeBy={sizeBy} query={query} />
       ) : (
         <div className="chart status" role="status">
           {error

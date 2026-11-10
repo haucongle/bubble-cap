@@ -1,7 +1,7 @@
 :root {
-  --bg: #101a2e;
-  --panel: #172338;
-  --line: #263650;
+  --bg: #050505;
+  --panel: #121212;
+  --line: #262626;
   --text: #e8edf5;
   --muted: #93a3bd;
   --gain: #34c38f;
@@ -33,6 +33,33 @@ body {
 }
 
 .bar h1 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+
+.search { position: relative; }
+.search input {
+  font: inherit;
+  font-size: 0.875rem;
+  width: 220px;
+  padding: 6px 52px 6px 12px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.search input::placeholder { color: var(--muted); }
+.search input:focus-visible { outline: 2px solid var(--text); outline-offset: -1px; }
+.search kbd {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font: inherit;
+  font-size: 0.6875rem;
+  padding: 1px 5px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  pointer-events: none;
+}
 
 .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 
@@ -104,3 +131,37 @@ body {
 @media (max-width: 560px) {
   .meta { margin-left: 0; width: 100%; }
 }
+
+.pc-backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 5;
+}
+.pc {
+  width: min(560px, 100%);
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.pc-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.pc-head strong { font-size: 1.125rem; }
+.pc-sym { color: var(--muted); }
+.pc-sub { margin-top: 2px; font-size: 0.8125rem; color: var(--muted); }
+.pc-close {
+  font: inherit; font-size: 1.5rem; line-height: 1;
+  width: 32px; height: 32px; flex: none;
+  color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+}
+.pc-close:hover { color: var(--text); }
+.pc-close:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.pc-hover { height: 1.25rem; font-size: 0.875rem; }
+.pc-svg { display: block; width: 100%; height: auto; touch-action: none; }
+.pc-axis { fill: var(--muted); font-size: 11px; }
+.pc-range { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.pc-msg { padding: 48px 0; text-align: center; color: var(--muted); }
