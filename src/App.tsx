@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import BubbleChart from "./BubbleChart";
 import { STABLECOINS } from "./utils";
 import SourcePicker from "./SourcePicker";
+import OnchainChart from "./OnchainChart";
 import { clearMarketCache, loadView } from "./market";
 import type { CoinsFile, Timeframe } from "./types";
 
@@ -35,6 +36,7 @@ export default function App() {
   const [data, setData] = useState<CoinsFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("24h");
+  const [view, setView] = useState<"bubbles" | "onchain">("bubbles");
   const [exchange, setExchange] = useState("binance");
   const [page, setPage] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
@@ -57,6 +59,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (view !== "bubbles") return;
     let cancelled = false;
     setLoading(true);
     const load = async () => {
@@ -78,7 +81,7 @@ export default function App() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [exchange, page, reloadKey]);
+  }, [view, exchange, page, reloadKey]);
 
   const fetchLatest = () => {
     clearMarketCache();
@@ -109,6 +112,17 @@ export default function App() {
     <div className="app">
       <header className="bar">
         <h1>Bubblecap</h1>
+        <Segmented<"bubbles" | "onchain">
+          label="View"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "bubbles", text: "Bubbles" },
+            { value: "onchain", text: "On-chain" },
+          ]}
+        />
+        {view === "bubbles" && (
+          <>
         <div className="search">
           <input
             ref={searchRef}
@@ -167,9 +181,13 @@ export default function App() {
             </span>
           )}
         </div>
+          </>
+        )}
       </header>
 
-      {data ? (
+      {view === "onchain" ? (
+        <OnchainChart />
+      ) : data ? (
         <BubbleChart coins={coins} timeframe={timeframe} exchange={exchange} query={query} />
       ) : (
         <div className="chart status" role="status">

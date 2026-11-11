@@ -333,3 +333,40 @@ body {
 .fetch-btn:disabled { opacity: 0.6; cursor: progress; }
 .fetch-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .fetch-err { color: #ef4444; }
+
+.oc { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 16px 12px; }
+.oc-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.oc-stats { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.oc-stats div { display: flex; flex-direction: column; font-size: 0.75rem; color: var(--muted); }
+.oc-stats strong { font-size: 1.125rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.oc-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.oc-swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.oc-plot { position: relative; flex: 1; min-height: 240px; }
+.oc-plot svg { position: absolute; inset: 0; touch-action: none; }
+.oc-grid { stroke: var(--line); stroke-width: 1; }
+.oc-tick { fill: var(--muted); font-size: 11px; }
+.oc-cross { stroke: var(--muted); stroke-dasharray: 3 3; }
+.oc-tip {
+  position: absolute;
+  top: 12px;
+  width: 176px;
+  padding: 8px 10px;
+  font-size: 0.8125rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  pointer-events: none;
+}
+.oc-tip div { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.oc-note { margin: 0; font-size: 0.75rem; color: var(--muted); }
+.oc-asset {
+  font: inherit;
+  font-size: 0.875rem;
+  align-self: center;
+  padding: 6px 10px;
+  border: 1px solid var(--muted);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+.oc-plot.status { display: grid; place-items: center; color: var(--muted); }
