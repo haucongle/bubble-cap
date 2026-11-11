@@ -1,4 +1,4 @@
-import type { Coin, SizeBy, Timeframe } from "./types";
+import type { Coin, Timeframe } from "./types";
 
 export const STABLECOINS = new Set([
   "USDT", "USDC", "DAI", "USDE", "USD1", "PYUSD", "USDG", "RLUSD", "USDY", "USYC",
@@ -41,15 +41,10 @@ export function bubbleColors(change: number, tf: Timeframe) {
 export function computeRadii(
   coins: Coin[],
   tf: Timeframe,
-  sizeBy: SizeBy,
   w: number,
   h: number,
 ): Map<string, number> {
-  const raw = coins.map((c) =>
-    sizeBy === "marketCap"
-      ? Math.pow(Math.max(c.marketCap, 1), 0.28)
-      : Math.pow(Math.max(Math.abs(changeFor(c, tf)), 0.5), 0.6),
-  );
+  const raw = coins.map((c) => Math.pow(Math.max(Math.abs(changeFor(c, tf)), 0.5), 0.6));
   const sumSq = raw.reduce((s, v) => s + v * v, 0) || 1;
   const k = Math.sqrt((0.6 * w * h) / (Math.PI * sumSq));
   const minR = 11;
@@ -60,6 +55,7 @@ export function computeRadii(
 }
 
 export function fmtPct(v: number): string {
+  if (!Number.isFinite(v)) return "–";
   const s = Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1);
   return `${v > 0 ? "+" : ""}${s}%`;
 }

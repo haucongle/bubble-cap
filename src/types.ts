@@ -1,5 +1,4 @@
 export type Timeframe = "1h" | "24h" | "7d";
-export type SizeBy = "movement" | "marketCap";
 
 export interface Coin {
   id: string;
@@ -7,7 +6,8 @@ export interface Coin {
   name: string;
   rank: number;
   price: number;
-  marketCap: number;
+  marketCap: number; // 0 khi lấy từ sàn (không có vốn hoá)
+  volume24h?: number; // quote volume 24h (USD) khi lấy từ sàn
   change1h: number;
   change24h: number;
   change7d: number;

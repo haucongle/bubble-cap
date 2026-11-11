@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import BubbleChart from "./BubbleChart";
 import { STABLECOINS } from "./utils";
-import type { CoinsFile, SizeBy, Timeframe } from "./types";
+import SourcePicker from "./SourcePicker";
+import { clearMarketCache, loadView } from "./market";
+import type { CoinsFile, Timeframe } from "./types";
 
 const REFRESH_MS = 5 * 60 * 1000;
 
@@ -33,7 +35,10 @@ export default function App() {
   const [data, setData] = useState<CoinsFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("24h");
-  const [sizeBy, setSizeBy] = useState<SizeBy>("movement");
+  const [exchange, setExchange] = useState("binance");
+  const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [hideStable, setHideStable] = useState(true);
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -53,18 +58,18 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     const load = async () => {
       try {
-        const url = `${import.meta.env.BASE_URL}data/coins.json?t=${Date.now()}`;
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as CoinsFile;
+        const json = await loadView(exchange, page);
         if (!cancelled) {
           setData(json);
           setError(null);
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
     load();
@@ -73,16 +78,31 @@ export default function App() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, []);
+  }, [exchange, page, reloadKey]);
+
+  const fetchLatest = () => {
+    clearMarketCache();
+    setReloadKey((k) => k + 1);
+  };
 
   const coins = useMemo(
     () =>
-      data ? data.coins.filter((c) => !hideStable || !STABLECOINS.has(c.symbol.toUpperCase())) : [],
+      data
+        ? data.coins
+            .filter((c) => !hideStable || !STABLECOINS.has(c.symbol.toUpperCase()))
+            .sort((a, b) => a.rank - b.rank)
+        : [],
     [data, hideStable],
   );
 
   const updated = data
-    ? new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    ? new Date(data.updatedAt).toLocaleString([], {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : null;
 
   return (
@@ -118,14 +138,13 @@ export default function App() {
               { value: "7d", text: "7d" },
             ]}
           />
-          <Segmented<SizeBy>
-            label="Bubble size"
-            value={sizeBy}
-            onChange={setSizeBy}
-            options={[
-              { value: "movement", text: "Movement" },
-              { value: "marketCap", text: "Market cap" },
-            ]}
+          <SourcePicker
+            exchange={exchange}
+            page={page}
+            onChange={(ex, p) => {
+              setExchange(ex);
+              setPage(p);
+            }}
           />
           <label className="check">
             <input
@@ -136,19 +155,26 @@ export default function App() {
             Hide stablecoins
           </label>
         </div>
-        {data && (
-          <div className="meta">
-            Updated {updated} from {data.source}
-          </div>
-        )}
+        <div className="meta">
+          <button type="button" className="fetch-btn" onClick={fetchLatest} disabled={loading}>
+            {loading ? "Fetching…" : "Fetch latest"}
+          </button>
+          {error && data && <span className="fetch-err"> Fetch failed: {error}</span>}
+          {data && (
+            <span>
+              {" "}
+              Updated {updated} from {data.source}
+            </span>
+          )}
+        </div>
       </header>
 
       {data ? (
-        <BubbleChart coins={coins} timeframe={timeframe} sizeBy={sizeBy} query={query} />
+        <BubbleChart coins={coins} timeframe={timeframe} exchange={exchange} query={query} />
       ) : (
         <div className="chart status" role="status">
           {error
-            ? "Couldn't load prices. Run `npm run fetch` to create public/data/coins.json, then reload."
+            ? `Couldn't load prices (${error}). Try Fetch latest.`
             : "Loading prices…"}
         </div>
       )}
