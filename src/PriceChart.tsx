@@ -1,45 +1,22 @@
 import { useEffect, useState } from "react";
 import type { Coin, Timeframe } from "./types";
 import { fmtCap, fmtPct, fmtPrice } from "./utils";
+import { loadSeries, type Point } from "./history";
 
 interface Props {
   coin: Coin;
+  exchange: string;
   timeframe: Timeframe;
   onClose: () => void;
 }
 
-// Khung thời gian -> nến Binance (public, không cần key, có CORS)
-const RANGE: Record<Timeframe, { interval: string; limit: number }> = {
-  "1h": { interval: "1m", limit: 60 },
-  "24h": { interval: "15m", limit: 96 },
-  "7d": { interval: "1h", limit: 168 },
-};
-const HOSTS = ["https://api.binance.com", "https://data-api.binance.vision"];
-
-type Point = { t: number; p: number };
 type State = { status: "loading" } | { status: "error" } | { status: "ok"; points: Point[] };
-
-async function loadSeries(symbol: string, tf: Timeframe, signal: AbortSignal): Promise<Point[]> {
-  const { interval, limit } = RANGE[tf];
-  const q = `/api/v3/klines?symbol=${encodeURIComponent(symbol.toUpperCase())}USDT&interval=${interval}&limit=${limit}`;
-  for (const host of HOSTS) {
-    try {
-      const res = await fetch(host + q, { signal });
-      if (!res.ok) continue;
-      const rows = (await res.json()) as [number, string, string, string, string][];
-      if (rows.length > 1) return rows.map((r) => ({ t: r[0], p: Number(r[4]) }));
-    } catch (e) {
-      if (signal.aborted) throw e;
-    }
-  }
-  throw new Error("no data");
-}
 
 const W = 520;
 const H = 220;
 const PAD = { l: 8, r: 8, t: 12, b: 20 };
 
-export default function PriceChart({ coin, timeframe, onClose }: Props) {
+export default function PriceChart({ coin, exchange, timeframe, onClose }: Props) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [hover, setHover] = useState<number | null>(null);
 
@@ -47,13 +24,13 @@ export default function PriceChart({ coin, timeframe, onClose }: Props) {
     const ac = new AbortController();
     setState({ status: "loading" });
     setHover(null);
-    loadSeries(coin.symbol, timeframe, ac.signal)
+    loadSeries(coin, exchange, timeframe, ac.signal)
       .then((points) => setState({ status: "ok", points }))
       .catch(() => {
         if (!ac.signal.aborted) setState({ status: "error" });
       });
     return () => ac.abort();
-  }, [coin.symbol, timeframe]);
+  }, [coin.id, coin.symbol, exchange, timeframe]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -146,7 +123,7 @@ export default function PriceChart({ coin, timeframe, onClose }: Props) {
               <span className={ch >= 0 ? "gain" : "loss"}>
                 {fmtPct(ch)} ({timeframe})
               </span>{" "}
-              · Cap {fmtCap(coin.marketCap)}
+              · {coin.marketCap > 0 ? `Cap ${fmtCap(coin.marketCap)}` : `Vol ${fmtCap(coin.volume24h ?? 0)}`}
             </div>
           </div>
           <button type="button" className="pc-close" aria-label="Close" onClick={onClose}>

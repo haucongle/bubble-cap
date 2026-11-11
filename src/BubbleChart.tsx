@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { forceSimulation } from "d3-force";
 import type { Simulation, SimulationNodeDatum } from "d3-force";
 import PriceChart from "./PriceChart";
-import type { Coin, SizeBy, Timeframe } from "./types";
+import type { Coin, Timeframe } from "./types";
 import { bubbleColors, changeFor, computeRadii, fmtCap, fmtPct, fmtPrice } from "./utils";
 
 interface BubbleNode extends SimulationNodeDatum {
@@ -15,7 +15,7 @@ interface BubbleNode extends SimulationNodeDatum {
 interface Props {
   coins: Coin[];
   timeframe: Timeframe;
-  sizeBy: SizeBy;
+  exchange: string;
   query: string;
 }
 
@@ -55,7 +55,7 @@ function pctClass(v: number) {
   return v > 0 ? "gain" : v < 0 ? "loss" : "";
 }
 
-export default function BubbleChart({ coins, timeframe, sizeBy, query }: Props) {
+export default function BubbleChart({ coins, timeframe, exchange, query }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const simRef = useRef<Simulation<BubbleNode, undefined> | null>(null);
@@ -65,14 +65,14 @@ export default function BubbleChart({ coins, timeframe, sizeBy, query }: Props) 
   const dragRef = useRef<BubbleNode | null>(null);
   const reduceRef = useRef(false);
   const syncRef = useRef<() => void>(() => {});
-  const latest = useRef({ coins, timeframe, sizeBy });
+  const latest = useRef({ coins, timeframe });
   const queryRef = useRef("");
   queryRef.current = query.trim().toLowerCase();
   const [tip, setTip] = useState<Tip | null>(null);
   const [selected, setSelected] = useState<Coin | null>(null);
   const downRef = useRef({ x: 0, y: 0 });
 
-  latest.current = { coins, timeframe, sizeBy };
+  latest.current = { coins, timeframe };
 
   // Khởi tạo simulation, vòng lặp vẽ và theo dõi kích thước khung
   useEffect(() => {
@@ -89,8 +89,8 @@ export default function BubbleChart({ coins, timeframe, sizeBy, query }: Props) 
     syncRef.current = () => {
       const { w, h } = sizeRef.current;
       if (w === 0 || h === 0) return;
-      const { coins, timeframe, sizeBy } = latest.current;
-      const radii = computeRadii(coins, timeframe, sizeBy, w, h);
+      const { coins, timeframe } = latest.current;
+      const radii = computeRadii(coins, timeframe, w, h);
       const map = nodesRef.current;
       const seen = new Set<string>();
       for (const c of coins) {
@@ -333,7 +333,7 @@ export default function BubbleChart({ coins, timeframe, sizeBy, query }: Props) 
   // Dữ liệu / timeframe / kiểu kích thước đổi -> tính lại bán kính
   useEffect(() => {
     syncRef.current();
-  }, [coins, timeframe, sizeBy]);
+  }, [coins, timeframe]);
 
   const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -418,7 +418,7 @@ export default function BubbleChart({ coins, timeframe, sizeBy, query }: Props) 
         onPointerCancel={onUp}
         onPointerLeave={onLeave}
       />
-      {selected && <PriceChart coin={selected} timeframe={timeframe} onClose={() => setSelected(null)} />}
+      {selected && <PriceChart coin={selected} exchange={exchange} timeframe={timeframe} onClose={() => setSelected(null)} />}
       {tip && !selected && (
         <div className="tip" style={tipStyle}>
           <div className="tip-head">
@@ -428,8 +428,17 @@ export default function BubbleChart({ coins, timeframe, sizeBy, query }: Props) 
           <dl>
             <dt>Price</dt>
             <dd>{fmtPrice(tip.coin.price)}</dd>
-            <dt>Market cap</dt>
-            <dd>{fmtCap(tip.coin.marketCap)}</dd>
+            {tip.coin.marketCap > 0 ? (
+              <>
+                <dt>Market cap</dt>
+                <dd>{fmtCap(tip.coin.marketCap)}</dd>
+              </>
+            ) : (
+              <>
+                <dt>Volume 24h</dt>
+                <dd>{fmtCap(tip.coin.volume24h ?? 0)}</dd>
+              </>
+            )}
             <dt>1h</dt>
             <dd className={pctClass(tip.coin.change1h)}>{fmtPct(tip.coin.change1h)}</dd>
             <dt>24h</dt>
